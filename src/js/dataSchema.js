@@ -4,7 +4,7 @@ var Schema = db.Schema;
 
 // create a schema
 var dataSchema = new Schema({
-  "USD": { type: Number, required: true },
+  "USD": { type: Number },
   "GBP_PROJ": { type: Number, required: true },
   "GBP": Number,
   "TRANS_TYPE": String,

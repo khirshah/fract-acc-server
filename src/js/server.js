@@ -43,5 +43,23 @@ app.post('/mongoWrite', asyncHandler(async (req, res, next) => {
 	res.send()
 }))
 
+app.put('/mongoUpdate:5b688eecbf2b6a12da0be66a', asyncHandler(async (req, res, next) => {
+	
+	f = await dataRow.findById('5b688eecbf2b6a12da0be66a', function (err, r) {
+		console.log(r)
+        if (err) throw err;
+
+        r.USD = req.body.USD;
+
+        r.save(function (err) {
+			if (err) throw err;
+
+			res.json({message: 'data updated!'})
+        })
+        
+	})
+	res.send()
+}))
+
 
 app.listen(3000, () => console.log('Example app listening on port 3000!'))
