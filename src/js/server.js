@@ -27,7 +27,7 @@ app.get('/mongoRead', asyncHandler(async (req, res, next) => {
 	  	return users;
 
 	});
-	console.log(f)
+	//console.log(f)
 	res.send(f)
 }))
 
@@ -43,23 +43,41 @@ app.post('/mongoWrite', asyncHandler(async (req, res, next) => {
 	res.send()
 }))
 
-app.put('/mongoUpdate:5b688eecbf2b6a12da0be66a', asyncHandler(async (req, res, next) => {
+app.put('/mongoUpdate', asyncHandler(async (req, res, next) => {
 	
-	f = await dataRow.findById('5b688eecbf2b6a12da0be66a', function (err, r) {
-		console.log(r)
+	f = await dataRow.findById(req.body._id, function (err, r) {
+		console.log(req.body)
         if (err) throw err;
 
-        r.USD = req.body.USD;
+        r[Object.keys(req.body.dat)[0]] = Object.values(req.body.dat)[0];
 
         r.save(function (err) {
 			if (err) throw err;
 
 			res.json({message: 'data updated!'})
+			console.log('data updated!')
         })
         
 	})
 	res.send()
 }))
+
+app.delete('/mongoRemove',asyncHandler(async (req, res) => {
+
+	f = await dataRow.findById(req.body._id, function (err, r) {
+
+        r.remove({
+            _id: req.body._id
+        }, function(err) {
+            if (err) throw err;
+
+            res.json({ message: 'Successfully deleted' });
+            console.log('data deleted!')
+        });
+    })
+    res.send()
+}));
+
 
 
 app.listen(3000, () => console.log('Example app listening on port 3000!'))
