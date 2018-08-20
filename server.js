@@ -29,18 +29,6 @@ app.get('/mongoRead', asyncHandler(async (req, res, next) => {
 	res.send(f)
 }))
 
-app.post('/mongoReadLine', asyncHandler(async (req, res, next) => {
-	console.log("mongoReadLine")
-	console.log(req.body)
-	const f = await dataRow.findById(req.body._id, function(err, dataLine) {
-	  	if (err) throw err;
-	  	
-	  	return dataLine;
-
-	});
-	console.log()
-	res.send(f)
-}))
 
 app.post('/mongoWrite', asyncHandler(async (req, res, next) => {
 	
@@ -51,8 +39,7 @@ app.post('/mongoWrite', asyncHandler(async (req, res, next) => {
 
 	  console.log('Data saved successfully!', item.id);
 	  res.send({id : item.id})
-	  	//console.log("f: ",f)
-	//  res.send()
+
 	});
 
 
@@ -61,19 +48,18 @@ app.post('/mongoWrite', asyncHandler(async (req, res, next) => {
 app.put('/mongoUpdate', asyncHandler(async (req, res, next) => {
 	
 	f = await dataRow.findById(req.body._id, function (err, r) {
-		//console.log(req.body)
+
         if (err) throw err;
 
         r[Object.keys(req.body.dat)[0]] = Object.values(req.body.dat)[0];
 
         r.save(function (err) {
 			if (err) throw err;
-
-			res.json({message: 'data updated!'})
 			console.log('data updated!')
         })
         
 	})
+
 	res.send()
 }))
 
@@ -86,10 +72,9 @@ app.delete('/mongoRemove',asyncHandler(async (req, res) => {
         }, function(err) {
             if (err) throw err;
 
-            res.json({ message: 'Successfully deleted' });
-            console.log('data deleted!')
         });
     })
+    console.log('data deleted!')
     res.send()
 }));
 
