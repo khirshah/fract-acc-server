@@ -6,8 +6,8 @@ var bodyParser = require('body-parser');
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-var database = require('./mongo');
-var dataRow = require('./dataSchema');
+var database = require('./src/js/mongo');
+var dataRow = require('./src/js/dataSchema');
 
 app.use(function (req, res, next) {
 res.setHeader('Access-Control-Allow-Origin', '*');
@@ -17,17 +17,28 @@ res.setHeader('Access-Control-Allow-Credentials', true);
 next();
 });
 
-//app.get('/', (req, res) => res.send('Hello World!'))
 app.get('/mongoRead', asyncHandler(async (req, res, next) => {
 
-	const f = await dataRow.find({}, function(err, users) {
+	const f = await dataRow.find({}, function(err, data) {
 	  	if (err) throw err;
 
-
-	  	return users;
+		return data;
 
 	});
 	//console.log(f)
+	res.send(f)
+}))
+
+app.post('/mongoReadLine', asyncHandler(async (req, res, next) => {
+	console.log("mongoReadLine")
+	console.log(req.body)
+	const f = await dataRow.findById(req.body._id, function(err, dataLine) {
+	  	if (err) throw err;
+	  	
+	  	return dataLine;
+
+	});
+	console.log()
 	res.send(f)
 }))
 
@@ -35,18 +46,22 @@ app.post('/mongoWrite', asyncHandler(async (req, res, next) => {
 	
 	var row = new dataRow(req.body)
 
-	f = await row.save(function(err) {
+	const f = await row.save(function(err, item) {
 	  if (err) throw err;
 
-	  console.log('Data saved successfully!');
+	  console.log('Data saved successfully!', item.id);
+	  res.send({id : item.id})
+	  	//console.log("f: ",f)
+	//  res.send()
 	});
-	res.send()
+
+
 }))
 
 app.put('/mongoUpdate', asyncHandler(async (req, res, next) => {
 	
 	f = await dataRow.findById(req.body._id, function (err, r) {
-		console.log(req.body)
+		//console.log(req.body)
         if (err) throw err;
 
         r[Object.keys(req.body.dat)[0]] = Object.values(req.body.dat)[0];
