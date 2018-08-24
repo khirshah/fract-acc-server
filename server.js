@@ -3,6 +3,8 @@ var path = require('path')
 const app = express()
 const asyncHandler = require('express-async-handler')
 var bodyParser = require('body-parser');
+process.env.PORT = 3000;
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -80,4 +82,4 @@ app.delete('/mongoRemove',asyncHandler(async (req, res) => {
 
 
 
-app.listen(3000, () => console.log('Example app listening on port 3000!'))
+app.listen(process.env.PORT, () => console.log(`Example app listening on port ${process.env.PORT}`))

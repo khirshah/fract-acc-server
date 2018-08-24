@@ -1,5 +1,13 @@
+var conf = require('./MongoConfig.json')
+
 var database = require('mongoose');
-//console.log(database)
-database.connect('mongodb://127.0.0.1:27017/acc-app',{ useNewUrlParser: true });
+
+process.env.dburl = conf.dburl;
+
+database.connect(process.env.dburl,{useNewUrlParser: true}, function (err) {
+
+	if (err) throw err;
+
+});
 
 module.exports = database;
