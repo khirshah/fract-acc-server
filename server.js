@@ -4,7 +4,7 @@ const app = express()
 const asyncHandler = require('express-async-handler')
 var bodyParser = require('body-parser');
 
-try {
+/*try {
   var conf = require('./src/js/MongoConfig.json');
   process.env.PORT = conf.PORT;
 }
@@ -12,7 +12,7 @@ catch(err) {
 
   throw err;
 }
-
+*/
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 

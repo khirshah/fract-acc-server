@@ -1,11 +1,11 @@
 
-try {
+/*try {
   var conf = require('./MongoConfig.json');
   process.env.dburl = conf.dburl;
 }
 catch(err){
   throw err;
-}
+}*/
 
 var database = require('mongoose');
 
