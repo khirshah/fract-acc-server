@@ -1,15 +1,15 @@
+var conf;
 
-/*try {
-  var conf = require('./MongoConfig.json');
-  process.env.dburl = conf.dburl;
+try {
+  conf = require('./MongoConfig.json');
 }
 catch(err){
-  throw err;
-}*/
+  console.log(err)
+}
 
 var database = require('mongoose');
 
-database.connect(process.env.dburl,{useNewUrlParser: true}, function (err) {
+database.connect(process.env.dburl || conf.dburl,{useNewUrlParser: true}, function (err) {
 
 	if (err) throw err;
 

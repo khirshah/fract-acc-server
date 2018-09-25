@@ -3,16 +3,18 @@ var path = require('path')
 const app = express()
 const asyncHandler = require('express-async-handler')
 var bodyParser = require('body-parser');
+var conf;
 
-/*try {
-  var conf = require('./src/js/MongoConfig.json');
-  process.env.PORT = conf.PORT;
+
+try {
+  conf = require('./src/js/MongoConfig.json');
 }
 catch(err) {
 
-  throw err;
+  console.log(err);
 }
-*/
+
+var port=process.env.PORT || conf.PORT;
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -90,4 +92,4 @@ app.delete('/mongoRemove',asyncHandler(async (req, res) => {
 
 
 
-app.listen(process.env.PORT, () => console.log(`Example app listening on port ${process.env.PORT}`))
+app.listen(port, () => console.log(`Example app listening on port ${port}`))
