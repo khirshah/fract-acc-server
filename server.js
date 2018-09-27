@@ -1,6 +1,7 @@
+//load env vars
+require('dotenv').config();
 const express = require('express')
 var path = require('path')
-require('dotenv').config();
 const app = express()
 const asyncHandler = require('express-async-handler')
 var bodyParser = require('body-parser');
