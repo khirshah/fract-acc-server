@@ -1,20 +1,10 @@
 const express = require('express')
 var path = require('path')
+require('dotenv').config();
 const app = express()
 const asyncHandler = require('express-async-handler')
 var bodyParser = require('body-parser');
-var conf;
 
-
-try {
-  conf = require('./src/js/MongoConfig.json');
-}
-catch(err) {
-
-  console.log(err);
-}
-
-var port=process.env.PORT || conf.PORT;
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -92,4 +82,4 @@ app.delete('/mongoRemove',asyncHandler(async (req, res) => {
 
 
 
-app.listen(port, () => console.log(`Example app listening on port ${port}`))
+app.listen(process.env.PORT, () => console.log(`Example app listening on port ${process.env.PORT}`))
