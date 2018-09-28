@@ -2,9 +2,9 @@
   "name": "fract-acc-server",
   "version": "1.0.0",
   "description": "a small server app for the accounting app",
-  "main": "server.js",
+  "main": "src/js/server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node src/js/server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack"
   },
