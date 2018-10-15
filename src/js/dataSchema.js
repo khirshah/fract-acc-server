@@ -4,16 +4,17 @@ var Schema = db.Schema;
 
 // create a schema
 var dataSchema = new Schema({
-  "CURRENCY" : String,
-  "USD": { type: Number },
-  "GBP_PROJ": { type: Number, required: true },
+  "CURRENCY": String,
+  "AMOUNT": { type: Number },
+  "PROJ": { type: Number, required: true },
   "GBP": Number,
   "TRANS_TYPE": String,
   "TRANS_DATE": Date,
   "TRANS_REF": String,
   "TRANS_DESC": String,
   "XCH_USD_GBP": Number,
-  "XCH_GBP_USD": Number
+  "XCH_GBP_USD": Number,
+  "INVOICE_XCH_RATE": Number
 
 });
 

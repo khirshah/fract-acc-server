@@ -20,7 +20,7 @@ res.setHeader('Access-Control-Allow-Credentials', true);
 next();
 });
 
-app.get('/mongoRead', asyncHandler(async (req, res, next) => {
+/*app.get('/mongoRead', asyncHandler(async (req, res, next) => {
 
 	const f = await dataRow.find({}, function(err, data) {
 	  	if (err) throw err;
@@ -28,13 +28,26 @@ app.get('/mongoRead', asyncHandler(async (req, res, next) => {
 		return data;
 
 	});
-	//console.log(f)
+	console.log(f)
+	res.send(f)
+}))
+*/
+
+app.post('/mongoRead', asyncHandler(async (req, res, next) => {
+	
+	const f = await dataRow.find({TRANS_DATE:{$gt:req.body.startDate}, CURRENCY:req.body.curr}, null, {sort: {TRANS_DATE:1}}, function(err, data){
+
+        if (err) throw err;
+
+        return data;
+	})
+	console.log(f)
 	res.send(f)
 }))
 
-
 app.post('/mongoWrite', asyncHandler(async (req, res, next) => {
 	
+	console.log("req body: ", req.body)
 	var row = new dataRow(req.body)
 
 	const f = await row.save(function(err, item) {
@@ -47,6 +60,7 @@ app.post('/mongoWrite', asyncHandler(async (req, res, next) => {
 
 
 }))
+
 
 app.put('/mongoUpdate', asyncHandler(async (req, res, next) => {
 	
