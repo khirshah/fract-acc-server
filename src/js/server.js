@@ -35,13 +35,18 @@ next();
 
 app.post('/mongoRead', asyncHandler(async (req, res, next) => {
 	
-	const f = await dataRow.find({TRANS_DATE:{$gt:req.body.startDate}, CURRENCY:req.body.curr}, null, {sort: {TRANS_DATE:1}}, function(err, data){
+	const thisYearDate = new Date(req.body.startDate)
+	let nextYear = parseInt(req.body.startDate)+1
+	let nextYearDate = new Date(req.body.startDate)
+	nextYearDate.setYear(nextYear)
+	
+	const f = await dataRow.find({TRANS_DATE:{ $gte: thisYearDate, $lt: nextYearDate}, CURRENCY:req.body.curr}, null, {sort: {TRANS_DATE:1}}, function(err, data){
 
         if (err) throw err;
 
         return data;
 	})
-	console.log(f)
+	
 	res.send(f)
 }))
 
@@ -60,7 +65,6 @@ app.post('/mongoWrite', asyncHandler(async (req, res, next) => {
 
 
 }))
-
 
 app.put('/mongoUpdate', asyncHandler(async (req, res, next) => {
 	
