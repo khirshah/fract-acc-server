@@ -20,18 +20,6 @@ res.setHeader('Access-Control-Allow-Credentials', true);
 next();
 });
 
-/*app.get('/mongoRead', asyncHandler(async (req, res, next) => {
-
-	const f = await dataRow.find({}, function(err, data) {
-	  	if (err) throw err;
-
-		return data;
-
-	});
-	console.log(f)
-	res.send(f)
-}))
-*/
 
 app.post('/mongoRead', asyncHandler(async (req, res, next) => {
 	
@@ -46,15 +34,40 @@ app.post('/mongoRead', asyncHandler(async (req, res, next) => {
 
         return data;
 	})
-	
+	//console.log(f)
 	res.send(f)
 }))
 
 app.post('/mongoWrite', asyncHandler(async (req, res, next) => {
-	
-	console.log("req body: ", req.body)
-	var row = new dataRow(req.body)
+    //create a date integer with the date of the received row
+    var inpdate = new Date(req.body.TRANS_DATE)
+    var dateInt = inpdate.getTime();
+    //copy the content of the requisition (the row we want to save) into and object
+    var obj = req.body
+	//get rows with the same date from Mongo
+	const results = await dataRow.find({TRANS_DATE: inpdate, CURRENCY:req.body.CURRENCY}, function(err, data){
 
+        if (err) throw err;
+        
+        return data;
+	})
+	//if there is none yet, this row gets the date id ending with zero
+	if (results.length == 0){
+
+    	obj.DATE_ID = parseInt(dateInt+"00")
+	
+	}
+	//is there are record on this date already, this row gets the next date id
+	else {
+
+		var index = results.length-1
+		var prevDateId = results[index].DATE_ID
+		obj.DATE_ID = parseInt(prevDateId)+1
+		
+	}
+	//create a mongo object using our object with the date id added to it
+	var row = new dataRow(obj)
+	//perform save
 	const f = await row.save(function(err, item) {
 	  if (err) throw err;
 
