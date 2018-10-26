@@ -6,7 +6,8 @@ var Schema = db.Schema;
 var dataSchema = new Schema({
   "DATE_ID":Number,
   "CURRENCY": String,
-  "AMOUNT": { type: Number },
+  "CUMUL_AMOUNT": Number,
+  "AMOUNT": Number,
   "PROJ": { type: Number, required: true },
   "GBP": Number,
   "TRANS_TYPE": String,
