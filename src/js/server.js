@@ -20,9 +20,45 @@ res.setHeader('Access-Control-Allow-Credentials', true);
 next();
 });
 
+//dataRow.watch().on('change', data => console.log("CHANGE: ", new Date(), data));
+
+async function calculateAmounts(dateID, curr){
+	console.log("calcAmounts: ",dateID,curr)
+	return new Promise((resolve,reject) => {
+
+		dataRow.find({DATE_ID: {$gte: dateID}, CURRENCY: curr}, null, {sort: {DATE_ID:1}},  function(err, data){
+
+	    if (err) throw err;
+
+	    if (data.length > 0) {
+	    
+	    	for (var i=0; i<data.length-1 ; i++) {
+
+	    		console.log(i,data[i].TRANS_DATE,data[i].CUMUL_AMOUNT)
+	    		var index = i+1
+	    		
+	    		var row = data[i+1]
+	    		var prevRow = data[i]
+
+	    		row.CUMUL_AMOUNT = parseFloat(prevRow.CUMUL_AMOUNT) + parseFloat(row.AMOUNT)
+
+	    		row.save(function (err) {
+			
+						if (err) throw err;
+					
+	  			})
+	      }
+	    }
+	    resolve(true)
+		})
+
+	})
+}
+
 
 app.post('/mongoRead', asyncHandler(async (req, res, next) => {
 	
+	console.log("mongoread")
 	const thisYearDate = new Date(req.body.startDate)
 	let nextYear = parseInt(req.body.startDate)+1
 	let nextYearDate = new Date(req.body.startDate)
@@ -45,6 +81,7 @@ app.post('/mongoWrite', asyncHandler(async (req, res, next) => {
   //copy the content of the requisition (the row we want to save) into and object
   var obj = req.body
 
+  //ASSIGNING A DATE_ID
 	//get rows with the same date from Mongo
 	const recordsOnSameDate = await dataRow.find({TRANS_DATE: inpdate, CURRENCY:req.body.CURRENCY}, function(err, data){
 
@@ -68,6 +105,7 @@ app.post('/mongoWrite', asyncHandler(async (req, res, next) => {
 
 	})
 
+	console.log("obj.DATE_ID: ",obj.DATE_ID)
 
   const recordsBeforeThisOne = await dataRow.find({DATE_ID: {$lt: obj.DATE_ID}, CURRENCY:req.body.CURRENCY},null, {sort: {DATE_ID:1}}, function(err, data){
 
@@ -80,7 +118,7 @@ app.post('/mongoWrite', asyncHandler(async (req, res, next) => {
 		}
 
 		else {
-
+		
 			obj.CUMUL_AMOUNT = parseFloat(data[data.length-1].CUMUL_AMOUNT)+parseFloat(obj.AMOUNT)
 		
 		}
@@ -90,54 +128,17 @@ app.post('/mongoWrite', asyncHandler(async (req, res, next) => {
 	//create a mongo object using our object with the date id added to it
 	var row = new dataRow(obj)
 	//perform save
-	
+	const f = await row.save()
 
-	const f = await row.save(async function(err, item) {
-	  
-	  if (err) throw err;
-	  return new Promise ((resolve, reject) =>  {
+	const recordsAfterThisOne = await calculateAmounts(obj.DATE_ID,req.body.CURRENCY);
 
-	  	console.log('Data saved successfully!', item.id)
+	console.log("res")
 
-	  	resolve(true)
-
-	  })
-	 
-	  
-	});
-
-
-
-	const recordsAfterThisOne = await dataRow.find({DATE_ID: {$gte: obj.DATE_ID}, CURRENCY:req.body.CURRENCY}, null, {sort: {DATE_ID:1}},  function(err, data){
-
-      if (err) throw err;
-
-
-      if (data.length > 0) {
-      
-      	for (var i=0; i<data.length-1 ; i++) {
-
-      		console.log(data[i].TRANS_DATE)
-      		var index = i+1
-      		
-      		var row = data[i+1]
-      		var prevRow = data[i]
-
-      		row.CUMUL_AMOUNT = parseFloat(prevRow.CUMUL_AMOUNT) + parseFloat(row.AMOUNT)
-
-      		row.save(function (err) {
-			
-						if (err) throw err;
-					
-    			})
-
-      	}
-      }
-	})
-
-res.send()
+	res.send();
 
 }))
+
+
 
 app.put('/mongoUpdate', asyncHandler(async (req, res, next) => {
 	
@@ -162,19 +163,43 @@ app.delete('/mongoRemove',asyncHandler(async (req, res) => {
 
 	f = await dataRow.findById(req.body._id, function (err, r) {
 
-    r.remove({
-        _id: req.body._id
-    }, function(err) {
-        if (err) throw err;
-
-    });
-
+	return r;
 
   });
 
+  const recordBeforeThisOne = await dataRow.find({DATE_ID: {$lt: f.DATE_ID}, CURRENCY:f.CURRENCY},null, {sort: {DATE_ID:1}}, function(err, data){
+
+    if (err) throw err;
+
+	})
+
+  var recForCount;
+
+  if (recordBeforeThisOne == 0) {
+		const recordAfterThisOne = await dataRow.find({DATE_ID: {$gt: f.DATE_ID}, CURRENCY:f.CURRENCY},null, {sort: {DATE_ID:1}}, function(err, data){
+
+			data[0].CUMUL_AMOUNT = data[0].AMOUNT
+			data[0].save();
+	    if (err) throw err;
+
+		})
+
+		recForCount = recordAfterThisOne[0]
+	}
+
+	else {
+
+		recForCount = recordBeforeThisOne[recordBeforeThisOne.length-1]
+	}
+ 
+
+	console.log("recForCount: ",recForCount.DATE_ID, recForCount.CURRENCY);
+
+  const deleteItem = await f.remove({_id: req.body._id});
+
   console.log('data deleted!')
 
-
+  const calcCumAmounts = await calculateAmounts(recForCount.DATE_ID,recForCount.CURRENCY);
 
   res.send()
 
