@@ -23,25 +23,22 @@ next();
 //dataRow.watch().on('change', data => console.log("CHANGE: ", new Date(), data));
 
 async function calculateAmounts(dateID, curr){
-	console.log("calcAmounts: ",dateID,curr)
-	return new Promise((resolve,reject) => {
 
+	return new Promise((resolve,reject) => {
+		//find all the records from the given date (inclusive)
 		dataRow.find({DATE_ID: {$gte: dateID}, CURRENCY: curr}, null, {sort: {DATE_ID:1}},  function(err, data){
 
 	    if (err) throw err;
-
+	    //if there are such records, do the calculation
 	    if (data.length > 0) {
-	    
+	    	//iterate through all of them and count the cumulative amount
 	    	for (var i=0; i<data.length-1 ; i++) {
 
-	    		console.log(i,data[i].TRANS_DATE,data[i].CUMUL_AMOUNT)
-	    		var index = i+1
-	    		
 	    		var row = data[i+1]
 	    		var prevRow = data[i]
 
 	    		row.CUMUL_AMOUNT = parseFloat(prevRow.CUMUL_AMOUNT) + parseFloat(row.AMOUNT)
-
+	    		//save the rows individually
 	    		row.save(function (err) {
 			
 						if (err) throw err;
@@ -58,7 +55,6 @@ async function calculateAmounts(dateID, curr){
 
 app.post('/mongoRead', asyncHandler(async (req, res, next) => {
 	
-	console.log("mongoread")
 	const thisYearDate = new Date(req.body.startDate)
 	let nextYear = parseInt(req.body.startDate)+1
 	let nextYearDate = new Date(req.body.startDate)
@@ -70,9 +66,10 @@ app.post('/mongoRead', asyncHandler(async (req, res, next) => {
 
         return data;
 	})
-	//console.log(f)
+
 	res.send(f)
 }))
+
 
 app.post('/mongoWrite', asyncHandler(async (req, res, next) => {
   //create a date integer with the date of the received row
@@ -83,56 +80,42 @@ app.post('/mongoWrite', asyncHandler(async (req, res, next) => {
 
   //ASSIGNING A DATE_ID
 	//get rows with the same date from Mongo
-	const recordsOnSameDate = await dataRow.find({TRANS_DATE: inpdate, CURRENCY:req.body.CURRENCY}, function(err, data){
+	const recOnSameDate = await dataRow.find({TRANS_DATE: inpdate, CURRENCY:req.body.CURRENCY})
 
-    if (err) throw err;
-		
 		//if there is none yet, this row gets the date id ending with zero
-		if (data.length == 0){
+	if (recOnSameDate.length == 0){
 
-	    	obj.DATE_ID = parseInt(dateInt+"00")
+    	obj.DATE_ID = parseInt(dateInt+"00")
+	
+	}
+	//if there are record(s) on this date already, this row gets the next date id
+	else {
+
+		var prevDateId = recOnSameDate[recOnSameDate.length-1].DATE_ID
+		obj.DATE_ID = parseInt(prevDateId)+1
 		
-		}
-
-		//if there are record(s) on this date already, this row gets the next date id
-		else {
-
-			var index = data.length-1
-			var prevDateId = data[index].DATE_ID
-			obj.DATE_ID = parseInt(prevDateId)+1
-			
-		}
-
-	})
-
-	console.log("obj.DATE_ID: ",obj.DATE_ID)
-
-  const recordsBeforeThisOne = await dataRow.find({DATE_ID: {$lt: obj.DATE_ID}, CURRENCY:req.body.CURRENCY},null, {sort: {DATE_ID:1}}, function(err, data){
-
-    if (err) throw err;
+	}
+	//get the records before this one
+  const recBefThis = await dataRow.find({DATE_ID: {$lt: obj.DATE_ID}, CURRENCY:req.body.CURRENCY},null, {sort: {DATE_ID:1}})
+  //if there are no such records, this is the first, so make cumul amount equal to the amount
+	if (recBefThis.length == 0) {
 		
-		if (data.length == 0) {
-		
-			obj.CUMUL_AMOUNT = obj.AMOUNT
-		
-		}
-
-		else {
-		
-			obj.CUMUL_AMOUNT = parseFloat(data[data.length-1].CUMUL_AMOUNT)+parseFloat(obj.AMOUNT)
-		
-		}
-
-	})
+		obj.CUMUL_AMOUNT = obj.AMOUNT
+	
+	}
+	//if there are preceeding records, get the last item of the list = the record befor this one
+	else {
+	
+		obj.CUMUL_AMOUNT = parseFloat(recBefThis[recBefThis.length-1].CUMUL_AMOUNT)+parseFloat(obj.AMOUNT)
+	
+	}
 
 	//create a mongo object using our object with the date id added to it
 	var row = new dataRow(obj)
 	//perform save
 	const f = await row.save()
-
-	const recordsAfterThisOne = await calculateAmounts(obj.DATE_ID,req.body.CURRENCY);
-
-	console.log("res")
+	//calculate cumulative amounts
+	await calculateAmounts(obj.DATE_ID,req.body.CURRENCY);
 
 	res.send();
 
@@ -142,63 +125,102 @@ app.post('/mongoWrite', asyncHandler(async (req, res, next) => {
 
 app.put('/mongoUpdate', asyncHandler(async (req, res, next) => {
 	
-	f = await dataRow.findById(req.body._id, function (err, r) {
+	var thisRec = await dataRow.findById(req.body._id)
 
-    if (err) throw err;
+  thisRec[Object.keys(req.body.dat)[0]] = Object.values(req.body.dat)[0];
+  //save the record
+  await thisRec.save()
 
-    r[Object.keys(req.body.dat)[0]] = Object.values(req.body.dat)[0];
-
-    r.save(function (err) {
+  console.log('data updated!')
+  //and retrieve it again, so we get the changes and can save the rec again later
+  var thisRec = await dataRow.findById(req.body._id)
+  //if the amount of the row is modified
+  if (Object.keys(req.body.dat)[0] == "AMOUNT") {
+  	//We need to recount the Cumul amount of this record and all the followings
+  	const recBefThis = await dataRow.find({DATE_ID: {$lt: thisRec.DATE_ID}, CURRENCY:thisRec.CURRENCY},null, {sort: {DATE_ID:-1}}).limit(1)
+  	//if there are no records before this one, the amount equals the cumul amount
+		if (recBefThis.length == 0) {
 			
-			if (err) throw err;
-			console.log('data updated!')
-    })
-        
-	})
+			thisRec.CUMUL_AMOUNT = Object.values(req.body.dat)[0];
+		}
+		//if there are, then we add the amount to the previous record's cumul amount
+		else {
+
+			thisRec.CUMUL_AMOUNT = parseFloat(recBefThis[0].CUMUL_AMOUNT) + parseFloat(Object.values(req.body.dat)[0]);		
+		}
+		//save the record
+		await thisRec.save();
+  	//call the calculation function
+  	await calculateAmounts(thisRec.DATE_ID,thisRec.CURRENCY);
+  }
+  //if the date is modified
+  else if (Object.keys(req.body.dat)[0] == "TRANS_DATE") {
+
+  	var date = Object.values(req.body.dat)[0]
+  	var inpdate = new Date(date)
+  	var dateInt = inpdate.getTime();
+  	//new DATE_ID is needed and we recount the whole db cumul amounts
+		const recOnSameDate = await dataRow.find({TRANS_DATE: inpdate, CURRENCY:req.body.CURRENCY})
+
+		//if there is none yet, this row gets the date id ending with zero
+		if (recOnSameDate.length == 0){
+
+	    	thisRec.DATE_ID = parseInt(dateInt+"00")
+		}
+		//if there are record(s) on this date already, this row gets the next date id
+		else {
+
+			var prevDateId = recOnSameDate[recOnSameDate.length-1].DATE_ID
+			thisRec.DATE_ID = parseInt(prevDateId)+1
+			}
+		//either way we have to save the record
+		await thisRec.save();
+		//we need to get the first record of the database
+		firstRec = await dataRow.find({CURRENCY:thisRec.CURRENCY},null,{sort: {DATE_ID:1}}).limit(1);
+		//just in case we make cumul amount and amount equal (in case we just inserted our record to the first slot)
+		firstRec[0].CUMUL_AMOUNT = firstRec[0].AMOUNT;
+		//save the first rec
+		await firstRec[0].save();
+		//retrieve it again so we can work with the modified version
+		firstRec = await dataRow.find({CURRENCY:thisRec.CURRENCY},null,{sort: {DATE_ID:1}}).limit(1);
+		//to calculate the cumulative amounts
+		await calculateAmounts(firstRec[0].DATE_ID,firstRec[0].CURRENCY);
+  }
 
 	res.send()
 }))
 
+
+
 app.delete('/mongoRemove',asyncHandler(async (req, res) => {
-
-	f = await dataRow.findById(req.body._id, function (err, r) {
-
-	return r;
-
-  });
-
-  const recordBeforeThisOne = await dataRow.find({DATE_ID: {$lt: f.DATE_ID}, CURRENCY:f.CURRENCY},null, {sort: {DATE_ID:1}}, function(err, data){
-
-    if (err) throw err;
-
-	})
-
+	  //create a variable for the record we will use for the calculation of cumulative amounts
   var recForCount;
+	//let's find our rec to delete
+	f = await dataRow.findById(req.body._id);
+	//and then the one before
+  const recordBeforeThisOne = await dataRow.find({DATE_ID: {$lt: f.DATE_ID}, CURRENCY:f.CURRENCY},null, {sort: {DATE_ID:1}})
 
+  //if this is the first record, we need to find the one after this one, because that's going to be the first after deleting this
   if (recordBeforeThisOne == 0) {
-		const recordAfterThisOne = await dataRow.find({DATE_ID: {$gt: f.DATE_ID}, CURRENCY:f.CURRENCY},null, {sort: {DATE_ID:1}}, function(err, data){
 
-			data[0].CUMUL_AMOUNT = data[0].AMOUNT
-			data[0].save();
-	    if (err) throw err;
-
-		})
-
+		const recordAfterThisOne = await dataRow.find({DATE_ID: {$gt: f.DATE_ID}, CURRENCY:f.CURRENCY},null, {sort: {DATE_ID:1}}).limit(1);
+			
+		recordAfterThisOne[0].CUMUL_AMOUNT = data[0].AMOUNT
+			
+		recordAfterThisOne[0].save();
+		
 		recForCount = recordAfterThisOne[0]
 	}
-
+	//if this isn't the first record, easy: the record before this one will be the one we use for the calculation of cumul amounts
 	else {
 
 		recForCount = recordBeforeThisOne[recordBeforeThisOne.length-1]
 	}
- 
-
-	console.log("recForCount: ",recForCount.DATE_ID, recForCount.CURRENCY);
-
+	//now we can safely delete the original item
   const deleteItem = await f.remove({_id: req.body._id});
 
   console.log('data deleted!')
-
+  //then perform the calculation
   const calcCumAmounts = await calculateAmounts(recForCount.DATE_ID,recForCount.CURRENCY);
 
   res.send()
