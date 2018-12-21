@@ -63,7 +63,7 @@ app.post('/mongoRead', asyncHandler(async (req, res, next) => {
 	const f = await dataRow.find({TRANS_DATE:{ $gte: thisYearDate, $lt: nextYearDate}, CURRENCY:req.body.curr}, null, {sort: {TRANS_DATE:1}}, function(err, data){
 
         if (err) throw err;
-
+        console.log(req.body.startDate, data)
         return data;
 	})
 
@@ -205,7 +205,7 @@ app.delete('/mongoRemove',asyncHandler(async (req, res) => {
 
 		const recordAfterThisOne = await dataRow.find({DATE_ID: {$gt: f.DATE_ID}, CURRENCY:f.CURRENCY},null, {sort: {DATE_ID:1}}).limit(1);
 			
-		recordAfterThisOne[0].CUMUL_AMOUNT = data[0].AMOUNT
+		recordAfterThisOne[0].CUMUL_AMOUNT = recordAfterThisOne[0].AMOUNT
 			
 		recordAfterThisOne[0].save();
 		
