@@ -59,11 +59,12 @@ app.post('/mongoRead', asyncHandler(async (req, res, next) => {
 	let nextYear = parseInt(req.body.startDate)+1
 	let nextYearDate = new Date(req.body.startDate)
 	nextYearDate.setYear(nextYear)
+	console.log(thisYearDate,nextYearDate)
 	
 	const f = await dataRow.find({TRANS_DATE:{ $gte: thisYearDate, $lt: nextYearDate}, CURRENCY:req.body.curr}, null, {sort: {TRANS_DATE:1}}, function(err, data){
 
         if (err) throw err;
-        console.log(req.body.startDate, data)
+
         return data;
 	})
 
