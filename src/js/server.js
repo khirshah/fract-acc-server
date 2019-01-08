@@ -54,7 +54,7 @@ async function calculateAmounts(dateID, curr){
 
 
 app.post('/mongoRead', asyncHandler(async (req, res, next) => {
-
+	console.log("READ")
 	const thisYearDate = new Date(req.body.startDate)
 	let nextYear = parseInt(req.body.startDate)+1
 	const nextYearDate = new Date(Date.UTC(nextYear, 0));
@@ -71,6 +71,7 @@ app.post('/mongoRead', asyncHandler(async (req, res, next) => {
 
 
 app.post('/mongoWrite', asyncHandler(async (req, res, next) => {
+	console.log("WRITE")
   //create a date integer with the date of the received row
   var inpdate = new Date(req.body.TRANS_DATE)
   var dateInt = inpdate.getTime();
@@ -123,7 +124,7 @@ app.post('/mongoWrite', asyncHandler(async (req, res, next) => {
 
 
 app.put('/mongoUpdate', asyncHandler(async (req, res, next) => {
-	
+	console.log("UPDATE")
 	var thisRec = await dataRow.findById(req.body._id)
 
   thisRec[Object.keys(req.body.dat)[0]] = Object.values(req.body.dat)[0];
@@ -192,6 +193,7 @@ app.put('/mongoUpdate', asyncHandler(async (req, res, next) => {
 
 
 app.delete('/mongoRemove',asyncHandler(async (req, res) => {
+	console.log("DELETE")
 	  //create a variable for the record we will use for the calculation of cumulative amounts
   var recForCount;
 	//let's find our rec to delete
